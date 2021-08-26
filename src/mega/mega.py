@@ -645,6 +645,75 @@ class Mega:
             is_public=True,
         )
 
+    def get_download_url(self, url):
+        """
+        Download a file by it's public url
+        
+        Args:
+            url (str): mega url, example: https://mega.nz/file/GH4ySQ5A#Dr5Xbj8jJVv85x5mw1IrOXmIp56r-MoE-UpFrfZGUL0
+        
+        Returns:
+            list: direct_url (str), size (int)
+        
+        Raises:
+            RequestError: if file not found or no permission
+        """
+        path = self._parse_url(url).split('!')
+        file_id = path[0]
+        file_key = path[1]
+        return self._get_download_url(
+            file_handle=file_id,
+            file_key=file_key,
+        )
+
+    def _get_download_url(self, file_handle, file_key, file=None):
+        """Get download url from mega url
+        
+        Args:
+            file_handle (object): self._parse_url(url).split('!')[0] object
+            file_key (str): self._parse_url(url).split('!')[1] object
+            file (None, list): file object
+        
+        Returns:
+            list: direct_url (str), size (int)
+        
+        Raises:
+            RequestError: if file not found or no permission
+        """
+        if file is None:
+            if is_public:
+                file_key = base64_to_a32(file_key)
+                file_data = self._api_request({
+                    'a': 'g',
+                    'g': 1,
+                    'p': file_handle
+                })
+            else:
+                file_data = self._api_request({
+                    'a': 'g',
+                    'g': 1,
+                    'n': file_handle
+                })
+
+            k = (file_key[0] ^ file_key[4], file_key[1] ^ file_key[5],
+                 file_key[2] ^ file_key[6], file_key[3] ^ file_key[7])
+            iv = file_key[4:6] + (0, 0)
+            meta_mac = file_key[6:8]
+        else:
+            file_data = self._api_request({'a': 'g', 'g': 1, 'n': file['h']})
+            k = file['k']
+            iv = file['iv']
+            meta_mac = file['meta_mac']
+
+        # Seems to happens sometime... When this occurs, files are
+        # inaccessible also in the official also in the official web app.
+        # Strangely, files can come back later.
+        if 'g' not in file_data:
+            raise RequestError('File not accessible anymore')
+        file_url = file_data['g']
+        file_size = file_data['s']
+        return file_url, file_size
+
     def _download_file(self,
                        file_handle,
                        file_key,
