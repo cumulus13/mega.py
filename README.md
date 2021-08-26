@@ -11,6 +11,7 @@ API, currently supporting:
 -   login
 -   uploading
 -   downloading
+-   get direct download url
 -   deleting
 -   searching
 -   sharing
@@ -127,6 +128,15 @@ m.download_url('https://mega.co.nz/#!utYjgSTQ!OM4U3V5v_W4N5edSo0wolg1D5H0fwSrLD3
 m.download(file, '/home/john-smith/Desktop')
 # specify optional download filename (download_url() supports this also)
 m.download(file, '/home/john-smith/Desktop', 'myfile.zip')
+```
+
+### Get download URL from mega url
+
+```python
+url, size = m.get_download_url('https://mega.co.nz/#!utYjgSTQ!OM4U3V5v_W4N5edSo0wolg1D5H0fwSrLD3oLnLuS9pc')
+# download with you favorite download[er] manager, i am use pywget (pip install pywget)
+from pywget import wget
+wget.download(url, '/home/john-smith/Desktop', 'myfile.zip')
 ```
 
 ### Import a file from URL, optionally specify destination folder
