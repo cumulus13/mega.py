@@ -56,7 +56,7 @@ class RequestError(Exception):
         code = message
         self.code = code
         code_desc, long_desc = _CODE_TO_DESCRIPTIONS[code]
-        self.message = f'{code_desc}, {long_desc}'
+        self.message = '{}, {}'.format(code_desc, long_desc)
 
     def __str__(self):
         return self.message

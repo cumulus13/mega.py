@@ -1,5 +1,6 @@
 import math
 import re
+import sys
 import json
 import logging
 import secrets
@@ -14,15 +15,27 @@ import binascii
 import tempfile
 import shutil
 
+#for debugging
+from pydebugger.debug import debug
+from pprint import pprint
+
 import requests
 from tenacity import retry, wait_exponential, retry_if_exception_type
 
-from .errors import ValidationError, RequestError
-from .crypto import (a32_to_base64, encrypt_key, base64_url_encode,
-                     encrypt_attr, base64_to_a32, base64_url_decode,
-                     decrypt_attr, a32_to_str, get_chunks, str_to_a32,
-                     decrypt_key, mpi_to_int, stringhash, prepare_key, make_id,
-                     makebyte, modular_inverse)
+try:
+    from .errors import ValidationError, RequestError
+    from .crypto import (a32_to_base64, encrypt_key, base64_url_encode,
+                         encrypt_attr, base64_to_a32, base64_url_decode,
+                         decrypt_attr, a32_to_str, get_chunks, str_to_a32,
+                         decrypt_key, mpi_to_int, stringhash, prepare_key, make_id,
+                         makebyte, modular_inverse)
+except ValueError or ImportError:
+    from errors import ValidationError, RequestError
+    from crypto import (a32_to_base64, encrypt_key, base64_url_encode,
+                         encrypt_attr, base64_to_a32, base64_url_decode,
+                         decrypt_attr, a32_to_str, get_chunks, str_to_a32,
+                         decrypt_key, mpi_to_int, stringhash, prepare_key, make_id,
+                         makebyte, modular_inverse)
 
 logger = logging.getLogger(__name__)
 
@@ -117,12 +130,31 @@ class Mega:
             for i in range(4):
                 # An MPI integer has a 2-byte header which describes the number
                 # of bits in the integer.
-                bitlength = (private_key[0] * 256) + private_key[1]
+                # debug(private_key = private_key, debug = True)
+                # print("private_key =", private_key)
+                # print("type(private_key) =", type(private_key))
+                # pprint(private_key)
+                if sys.version_info.major == 2:
+                    bitlength = (ord(private_key[0]) * 256) + ord(private_key[1])
+                else:
+                    bitlength = (private_key[0] * 256) + private_key[1]
+                # print("bitlength =", bitlength)
+                # print("type(bitlength) =", type(bitlength))
+                # debug(bitlength = bitlength, debug = True)
                 bytelength = math.ceil(bitlength / 8)
                 # Add 2 bytes to accommodate the MPI header
                 bytelength += 2
-                rsa_private_key[i] = mpi_to_int(private_key[:bytelength])
-                private_key = private_key[bytelength:]
+                if sys.version_info.major == 2:
+                    # debug(private_key = private_key, debug = True)
+                    # pprint(private_key)
+                    # debug(PR1 = private_key[:int(bytelength)], debug = True)
+                    rsa_private_key[i] = mpi_to_int(private_key[:int(bytelength)])
+                else:
+                    rsa_private_key[i] = mpi_to_int(private_key[:int(bytelength)])
+                if sys.version_info.major == 2:
+                    private_key = private_key[int(bytelength):]
+                else:
+                    private_key = private_key[int(bytelength):]
 
             first_factor_p = rsa_private_key[0]
             second_factor_q = rsa_private_key[1]
@@ -162,7 +194,7 @@ class Mega:
         if not isinstance(data, list):
             data = [data]
 
-        url = f'{self.schema}://g.api.{self.domain}/cs'
+        url = '{}://g.api.{}/cs'.format(self.schema, self.domain)
         response = requests.post(
             url,
             params=params,
@@ -196,7 +228,7 @@ class Mega:
             file_id = re.findall(r'\W\w\w\w\w\w\w\w\w\W', url)[0][1:-1]
             id_index = re.search(file_id, url).end()
             key = url[id_index + 1:]
-            return f'{file_id}!{key}'
+            return '{}!{}'.format(file_id, key)
         elif '!' in url:
             # V1 URL structure
             match = re.findall(r'/#!(.*)', url)
@@ -369,8 +401,7 @@ class Mega:
             file_key = file['k'][file['k'].index(':') + 1:]
             decrypted_key = a32_to_base64(
                 decrypt_key(base64_to_a32(file_key), self.master_key))
-            return (f'{self.schema}://{self.domain}'
-                    f'/#!{public_handle}!{decrypted_key}')
+            return ('{}://{}'.format(self.schema, self.domain) + '/#!{}!{}').format(public_handle, decrypted_key)
         else:
             raise ValueError('''Upload() response required as input,
                             use get_link() for regular file input''')
@@ -386,8 +417,7 @@ class Mega:
                 raise RequestError("Can't get a public link from that file "
                                    "(is this a shared file?)")
             decrypted_key = a32_to_base64(file['key'])
-            return (f'{self.schema}://{self.domain}'
-                    f'/#!{public_handle}!{decrypted_key}')
+            return ('{}://{}'.format(self.schema, self.domain) + '/#!{}!{}').format(public_handle, decrypted_key)
         else:
             raise ValidationError('File id and key must be present')
 
@@ -408,8 +438,7 @@ class Mega:
                 raise RequestError("Can't get a public link from that file "
                                    "(is this a shared file?)")
             decrypted_key = a32_to_base64(file['shared_folder_key'])
-            return (f'{self.schema}://{self.domain}'
-                    f'/#F!{public_handle}!{decrypted_key}')
+            return ('{}://{}'.format(self.schema, self.domain) + '/#F!{}!{}'.format(public_handle, decrypted_key))
         else:
             raise ValidationError('File id and key must be present')
 
