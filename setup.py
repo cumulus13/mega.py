@@ -2,12 +2,16 @@
 # -*- coding: utf-8 -*
 
 from __future__ import absolute_import
-
+import __version__
 import os
 from codecs import open
 
 from setuptools import find_packages, setup
 
+try:
+	version = __version__.version
+except:
+	version = "1.0.9.dev0"
 # allow setup.py to be run from any path
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
@@ -21,7 +25,7 @@ with open('HISTORY.md', 'r', encoding='utf-8') as hist_file:
     history = hist_file.read()
 
 setup(name='mega.py',
-      version='1.0.9.dev0',
+      version=version,
       packages=find_packages('src', exclude=('tests', )),
       package_dir={'': 'src'},
       include_package_data=True,

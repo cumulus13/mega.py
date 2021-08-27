@@ -6,9 +6,17 @@ import logging
 import secrets
 from pathlib import Path
 import hashlib
-from Crypto.Cipher import AES
-from Crypto.PublicKey import RSA
-from Crypto.Util import Counter
+if sys.version_info.major == 2:
+    try:        
+        from Cryptodome.Cipher import AES
+        from Cryptodome.PublicKey import RSA
+        from Cryptodome.Util import Counter
+    except:
+        print("Python 2.x: install pycryptodome (pip install pycryptodome) before and create '.separate_namespace' file in dir !")
+else:
+    from Crypto.Cipher import AES
+    from Crypto.PublicKey import RSA
+    from Crypto.Util import Counter
 import os
 import random
 import binascii
