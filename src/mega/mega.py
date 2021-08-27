@@ -12,7 +12,7 @@ if sys.version_info.major == 2:
         from Cryptodome.PublicKey import RSA
         from Cryptodome.Util import Counter
     except:
-        print("Python 2.x: install pycryptodome (pip install pycryptodome) before and create '.separate_namespace' file in dir !")
+        print("Python 2.x: install pycryptodomex (pip install pycryptodomex) before and create '.separate_namespace' file in dir !")
 else:
     from Crypto.Cipher import AES
     from Crypto.PublicKey import RSA
@@ -193,16 +193,20 @@ class Mega:
            wait=wait_exponential(multiplier=2, min=2, max=60))
     def _api_request(self, data):
         params = {'id': self.sequence_num}
+        debug(params = params)
         self.sequence_num += 1
-
+        debug(self_sequence_num = self.sequence_num)
+        debug(self_sid = self.sid)
         if self.sid:
             params.update({'sid': self.sid})
-
+        debug(params = params)
         # ensure input data is a list
         if not isinstance(data, list):
             data = [data]
-
+        debug(data = data)
         url = '{}://g.api.{}/cs'.format(self.schema, self.domain)
+        debug(url = url)
+        
         response = requests.post(
             url,
             params=params,
@@ -218,6 +222,7 @@ class Mega:
                 int_resp = json_resp
         except IndexError:
             int_resp = None
+        debug(int_resp = int_resp)
         if int_resp is not None:
             if int_resp == 0:
                 return int_resp
@@ -698,25 +703,17 @@ class Mega:
         path = self._parse_url(url).split('!')
         file_id = path[0]
         file_key = path[1]
-        return self._get_download_url(
+        return self._get_direct_link(
             file_handle=file_id,
             file_key=file_key,
+            is_public=True,
         )
 
-    def _get_download_url(self, file_handle, file_key, file=None, is_public=False):
-        """Get download url from mega url
-        
-        Args:
-            file_handle (object): self._parse_url(url).split('!')[0] object
-            file_key (str): self._parse_url(url).split('!')[1] object
-            file (None, list): file object
-        
-        Returns:
-            list: direct_url (str), size (int)
-        
-        Raises:
-            RequestError: if file not found or no permission
-        """
+    def _get_direct_link(self,
+                       file_handle,
+                       file_key,
+                       is_public=False,
+                       file=None):
         if file is None:
             if is_public:
                 file_key = base64_to_a32(file_key)
@@ -748,8 +745,8 @@ class Mega:
         if 'g' not in file_data:
             raise RequestError('File not accessible anymore')
         file_url = file_data['g']
-        file_size = file_data['s']
-        return file_url, file_size
+        print("Generated:", file_url)
+        return file_url
 
     def _download_file(self,
                        file_handle,
