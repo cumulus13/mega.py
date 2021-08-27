@@ -703,7 +703,7 @@ class Mega:
             file_key=file_key,
         )
 
-    def _get_download_url(self, file_handle, file_key, file=None):
+    def _get_download_url(self, file_handle, file_key, file=None, is_public=False):
         """Get download url from mega url
         
         Args:
