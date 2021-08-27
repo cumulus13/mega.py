@@ -17,6 +17,7 @@ API, currently supporting:
 -   sharing
 -   renaming
 -   moving files
+-   support python 2.7+ and python 3.x
 
 This is a work in progress, further functionality coming shortly.
 
