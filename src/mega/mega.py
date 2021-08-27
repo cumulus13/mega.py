@@ -745,7 +745,7 @@ class Mega:
         if 'g' not in file_data:
             raise RequestError('File not accessible anymore')
         file_url = file_data['g']
-        print("Generated:", file_url)
+        # print("Generated:", file_url)
         return file_url
 
     def _download_file(self,
